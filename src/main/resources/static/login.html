@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 个人创作工作台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .input-focus:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .tab-active {
+            background: #f3f4f6;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-md p-8">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-palette text-white text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">个人创作工作台</h1>
+            <p class="text-gray-500 mt-2">欢迎回来</p>
+        </div>
+
+        <div class="flex mb-6 bg-gray-100 rounded-xl p-1">
+            <button id="loginTab" onclick="switchTab('login')" class="flex-1 py-2 rounded-lg font-medium transition tab-active">
+                登录
+            </button>
+            <button id="registerTab" onclick="switchTab('register')" class="flex-1 py-2 rounded-lg font-medium transition text-gray-500">
+                注册
+            </button>
+        </div>
+
+        <div id="loginForm">
+            <form onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">账号名</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" id="loginUsername" required
+                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none input-focus">
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">密码</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
+                        <input type="password" id="loginPassword" required
+                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none input-focus">
+                    </div>
+                </div>
+                <div id="loginError" class="mb-4 text-red-500 text-sm hidden"></div>
+                <button type="submit" class="w-full btn-primary text-white py-3 rounded-lg font-medium">
+                    登录
+                </button>
+            </form>
+        </div>
+
+        <div id="registerForm" class="hidden">
+            <form onsubmit="handleRegister(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">账号名</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" id="registerUsername" required
+                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none input-focus">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">密码</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
+                        <input type="password" id="registerPassword" required
+                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none input-focus">
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">确认密码</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
+                        <input type="password" id="registerConfirmPassword" required
+                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none input-focus">
+                    </div>
+                </div>
+                <div id="registerError" class="mb-4 text-red-500 text-sm hidden"></div>
+                <button type="submit" class="w-full btn-primary text-white py-3 rounded-lg font-medium">
+                    注册
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const loginError = document.getElementById('loginError');
+            const registerError = document.getElementById('registerError');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginTab.classList.add('tab-active');
+                loginTab.classList.remove('text-gray-500');
+                registerTab.classList.remove('tab-active');
+                registerTab.classList.add('text-gray-500');
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                registerTab.classList.add('tab-active');
+                registerTab.classList.remove('text-gray-500');
+                loginTab.classList.remove('tab-active');
+                loginTab.classList.add('text-gray-500');
+            }
+
+            loginError.classList.add('hidden');
+            registerError.classList.add('hidden');
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    errorDiv.textContent = data.error || '登录失败';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                window.location.href = '/index.html';
+            } catch (err) {
+                console.error(err);
+                errorDiv.textContent = '网络错误，请稍后重试';
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            const errorDiv = document.getElementById('registerError');
+
+            if (password !== confirmPassword) {
+                errorDiv.textContent = '两次密码不一致';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    errorDiv.textContent = data.error || '注册失败';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                switchTab('login');
+                alert('注册成功，请登录');
+            } catch (err) {
+                console.error(err);
+                errorDiv.textContent = '网络错误，请稍后重试';
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/check');
+                if (response.ok) {
+                    window.location.href = '/index.html';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        checkAuth();
+    </script>
+</body>
+</html>

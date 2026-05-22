@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作品项目 - Portfolio Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+<div class="flex h-screen overflow-hidden">
+    <!-- 左侧导航栏 -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div class="p-6">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <span class="p-2 bg-indigo-600 text-white rounded-lg"><i class="fas fa-palette"></i></span>
+                个人创作工作台
+            </h1>
+            <p class="text-xs text-gray-400 mt-1">Portfolio Studio</p>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 flex flex-col gap-y-2 overflow-y-auto">
+            <a href="index.html" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-home"></i>
+                </div>
+                <span class="nav-text">首页</span>
+            </a>
+
+            <a href="projects.html" class="nav-item active group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-th-large"></i>
+                </div>
+                <span class="nav-text">作品项目</span>
+            </a>
+
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-gem"></i>
+                </div>
+                <span class="nav-text">创作资产</span>
+            </a>
+
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <span class="nav-text">作业任务</span>
+            </a>
+
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-star"></i>
+                </div>
+                <span class="nav-text">作品集候选</span>
+            </a>
+
+            <div class="mt-auto"></div>
+
+            <div id="userInfo" class="px-4 py-4 border-t border-gray-100">
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-indigo-600"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p id="userName" class="text-sm font-medium text-gray-800 truncate">用户</p>
+                        <p class="text-xs text-gray-500">已登录</p>
+                    </div>
+                    <button onclick="handleLogout()" class="text-gray-400 hover:text-red-500 transition" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <span class="nav-text">设置</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t text-xs text-gray-400">
+            <p class="font-bold text-gray-600 mb-1">本地数据分离</p>
+            <p>代码在 app，数据在 data 和 files。后续更新代码不会覆盖作品资料。</p>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col overflow-y-auto">
+        <!-- 顶部筛选 -->
+        <header class="p-6 bg-white/50 backdrop-blur-md sticky top-0 z-10 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-bold">作品项目</h2>
+                <div class="flex gap-4">
+                    <select id="filterCategory" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">全部分类</option>
+                        <option value="平面设计">平面设计</option>
+                        <option value="插画">插画</option>
+                        <option value="UI/UX">UI/UX</option>
+                        <option value="摄影">摄影</option>
+                        <option value="3D建模">3D建模</option>
+                        <option value="其他">其他</option>
+                    </select>
+                    <select id="filterStatus" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">全部状态</option>
+                        <option value="草稿">草稿</option>
+                        <option value="进行中">进行中</option>
+                        <option value="已完成">已完成</option>
+                        <option value="归档">归档</option>
+                    </select>
+                    <button onclick="openCreateModal()" class="bg-indigo-600 text-white px-6 py-2 rounded-full shadow-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-plus mr-2"></i>新建作品
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 项目列表 -->
+        <section class="p-6">
+            <div id="projectList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 项目卡片将通过 JS 渲染 -->
+            </div>
+            <div id="emptyState" class="text-center py-20">
+                <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">暂无项目，点击"新建作品"创建第一个项目吧！</p>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- 新建/编辑作品弹窗 -->
+<div id="createModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeCreateModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold" id="modalTitle">新建作品</h3>
+                <button onclick="closeCreateModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="projectForm" class="p-6 space-y-6">
+                <input type="hidden" id="projectId">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">作品名称</label>
+                    <input type="text" id="projectName" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="给你的作品起个名字">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">作品类型</label>
+                    <select id="projectType" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="平面设计">平面设计</option>
+                        <option value="插画">插画</option>
+                        <option value="UI/UX">UI/UX</option>
+                        <option value="摄影">摄影</option>
+                        <option value="3D建模">3D建模</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">作品状态</label>
+                    <div class="grid grid-cols-4 gap-3">
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300">
+                            <input type="radio" name="status" value="草稿">
+                            <span class="text-sm">草稿</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300">
+                            <input type="radio" name="status" value="进行中">
+                            <span class="text-sm">进行中</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300">
+                            <input type="radio" name="status" value="已完成">
+                            <span class="text-sm">已完成</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300">
+                            <input type="radio" name="status" value="归档">
+                            <span class="text-sm">归档</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">作品描述</label>
+                    <textarea id="projectDesc" rows="3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="简单描述一下这个作品..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">标签</label>
+                    <input type="text" id="projectTags" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="多个标签用逗号分隔">
+                </div>
+                <div class="pt-4 flex gap-3 justify-end">
+                    <button type="button" onclick="closeCreateModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition shadow-lg">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 项目详情弹窗 -->
+<div id="detailModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeDetailModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold" id="detailTitle">项目详情</h3>
+                <button onclick="closeDetailModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">作品分类</p>
+                        <p id="detailCategory" class="font-medium">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">状态</p>
+                        <p id="detailStatus" class="font-medium">-</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">作品描述</p>
+                    <p id="detailDesc" class="text-gray-700">-</p>
+                </div>
+
+                <div class="border-t pt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-4">
+                            <h4 class="font-bold">相关素材</h4>
+                            <div id="selectedCount" class="text-sm text-gray-500 hidden">已选择 0 个</div>
+                            <button id="exportSelectedBtn" onclick="exportSelectedAssets()" class="text-green-600 hover:text-green-700 text-sm hidden">
+                                <i class="fas fa-download mr-1"></i>导出选中
+                            </button>
+                            <button onclick="toggleSelectAll()" class="text-indigo-600 hover:text-indigo-700 text-sm">
+                                <i class="fas fa-check-double mr-1"></i>全选
+                            </button>
+                        </div>
+                        <button onclick="openAddAssetModal()" class="text-indigo-600 hover:text-indigo-700 text-sm">
+                            <i class="fas fa-plus mr-1"></i>添加素材
+                        </button>
+                    </div>
+                    <div id="detailAssets" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    </div>
+                </div>
+                
+                <!-- 提示词部分 -->
+                <div class="border-t pt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold">提示词</h4>
+                        <span id="promptCount" class="text-sm text-gray-500">0 条</span>
+                    </div>
+                    <div id="promptList" class="space-y-3">
+                    </div>
+                </div>
+
+                <div class="pt-4 flex gap-3 justify-end border-t">
+                    <button onclick="deleteProject()" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+                        <i class="fas fa-trash mr-2"></i>删除项目
+                    </button>
+                    <button onclick="editProject()" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition shadow-lg">
+                        <i class="fas fa-edit mr-2"></i>编辑项目
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加素材弹窗 -->
+<div id="addAssetModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeAddAssetModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold">添加素材</h3>
+                <button onclick="closeAddAssetModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addAssetForm" class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">上传文件</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-400 transition cursor-pointer" id="assetDropzone">
+                        <input type="file" id="newAssetFile" class="hidden" multiple accept="image/*,video/*,.pdf,.psd,.ai,.sketch,.fig">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                        <p class="text-gray-600 mb-1">点击或拖拽文件到这里</p>
+                        <p class="text-xs text-gray-400">支持图片、视频、PDF、设计文件等</p>
+                    </div>
+                    <div id="newAssetFileList" class="mt-4 space-y-2"></div>
+                </div>
+                <div class="pt-4 flex gap-3 justify-end">
+                    <button type="button" onclick="closeAddAssetModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition shadow-lg">上传</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/projects.js"></script>
+</body>
+</html>

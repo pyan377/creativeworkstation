@@ -1,0 +1,53 @@
+-- 1. 创建 作品项目表
+CREATE TABLE tb_work_project (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
+    status VARCHAR(50) DEFAULT '进行中',
+    cover_image VARCHAR(512),
+    source_file VARCHAR(512),
+    description TEXT,
+    is_candidate BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. 创建 创作素材/资产表
+CREATE TABLE tb_creative_asset (
+    id BIGSERIAL PRIMARY KEY,
+    project_id BIGINT REFERENCES tb_work_project(id) ON DELETE SET NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(512) NOT NULL,
+    file_size BIGINT,
+    file_type VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. 创建 提示词表
+CREATE TABLE tb_prompt_word (
+    id BIGSERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    tags VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. 创建 作业任务表
+CREATE TABLE tb_assignment_task (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    deadline TIMESTAMP,
+    status VARCHAR(50) DEFAULT '待办',
+    project_id BIGINT REFERENCES tb_work_project(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. 创建 系统配置表
+CREATE TABLE tb_system_config (
+    config_key VARCHAR(100) PRIMARY KEY,
+    config_value VARCHAR(255)
+);
+
+-- 6. 插入一些默认的系统配置（初始化状态）
+INSERT INTO tb_system_config (config_key, config_value) VALUES 
+('workspace_mode', 'SILENT_ORGANIZE'),
+('dark_mode', 'false');

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Studio | 个人创作工作台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- 引入图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+<div class="flex h-screen overflow-hidden">
+
+    <!-- 1. 左侧导航栏 -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div class="p-6">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <span class="p-2 bg-indigo-600 text-white rounded-lg"><i class="fas fa-palette"></i></span>
+                个人创作工作台
+            </h1>
+            <p class="text-xs text-gray-400 mt-1">Portfolio Studio</p>
+        </div>
+
+        <!-- 侧边栏导航区域 -->
+        <nav class="flex-1 px-4 py-6 flex flex-col gap-y-2 overflow-y-auto">
+            <!-- 首页 -->
+            <a href="javascript:void(0)" class="nav-item active group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-home"></i>
+                </div>
+                <span class="nav-text">首页</span>
+            </a>
+
+            <!-- 作品项目 -->
+            <a href="projects.html" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-th-large"></i>
+                </div>
+                <span class="nav-text">作品项目</span>
+            </a>
+
+            <!-- 创作资产 -->
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-gem"></i>
+                </div>
+                <span class="nav-text">创作资产</span>
+            </a>
+
+            <!-- 作业任务 -->
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <span class="nav-text">作业任务</span>
+            </a>
+
+            <!-- 作品集候选 -->
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-star"></i>
+                </div>
+                <span class="nav-text">作品集候选</span>
+            </a>
+
+            <!-- 分隔线，模拟自动布局中的填充占位 -->
+            <div class="mt-auto"></div>
+
+            <!-- 用户信息 -->
+            <div id="userInfo" class="px-4 py-4 border-t border-gray-100">
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-indigo-600"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p id="userName" class="text-sm font-medium text-gray-800 truncate">用户</p>
+                        <p class="text-xs text-gray-500">已登录</p>
+                    </div>
+                    <button onclick="handleLogout()" class="text-gray-400 hover:text-red-500 transition" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 设置 (放在最底部) -->
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <span class="nav-text">设置</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 2. 中间主内容区 -->
+    <main class="flex-1 flex flex-col overflow-y-auto">
+        <!-- 顶部搜索 -->
+        <header class="p-6 flex justify-between items-center bg-white/50 backdrop-blur-md sticky top-0 z-10">
+            <div class="relative w-96">
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                <input type="text" id="searchInput" placeholder="搜索作品、标签、说明" class="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <!-- 搜索结果下拉框 -->
+                <div id="searchResults" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hidden z-50 max-h-96 overflow-y-auto"></div>
+            </div>
+            <button onclick="openCreateModal()" class="bg-indigo-600 text-white px-6 py-2 rounded-full shadow-lg hover:bg-indigo-700 transition">
+                + 新建作品
+            </button>
+        </header>
+
+        <section class="p-8 space-y-8">
+            <!-- 欢迎横幅 -->
+            <div class="bg-white p-10 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 text-indigo-500 mb-2">
+                        <i class="fas fa-magic"></i> <span id="current-mode-label">安静整理</span>
+                    </div>
+                    <h2 class="text-4xl font-bold mb-4">Portfolio Studio</h2>
+                    <p class="text-gray-500 max-w-md" id="banner-hint">继续整理你的创作轨迹，把作品、源文件、提示词和过程记录放到同一个工作台。</p>
+                </div>
+                <!-- 背景装饰略 -->
+            </div>
+
+            <!-- 快捷功能格图 -->
+            <div class="grid grid-cols-5 gap-4">
+                <div class="action-card" onclick="openCreateModal()">
+                    <div class="text-indigo-500 text-2xl mb-2">+</div>
+                    <p>新建作品</p>
+                </div>
+                <div class="action-card" onclick="openAssetModal()">
+                    <i class="fas fa-upload text-blue-400 text-xl mb-2"></i>
+                    <p>添加素材</p>
+                </div>
+                <div class="action-card" onclick="openPromptModal()">
+                    <i class="fas fa-wand-sparkles text-purple-400 text-xl mb-2"></i>
+                    <p>保存提示词</p>
+                </div>
+                <div class="action-card" onclick="showDevelopmentAlert()">
+                    <i class="fas fa-book text-orange-400 text-xl mb-2"></i>
+                    <p>添加作业任务</p>
+                </div>
+                <div class="action-card" onclick="showDevelopmentAlert()">
+                    <i class="fas fa-star text-yellow-400 text-xl mb-2"></i>
+                    <p>查看作品集候选</p>
+                </div>
+            </div>
+
+            <!-- 统计卡片区 -->
+            <div class="grid grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <h3 class="font-bold mb-4">今日概览（功能还在更新中）</h3>
+                    <div class="grid grid-cols-3 text-center">
+                        <div><p class="text-xs text-gray-400">最近作品</p><p class="text-2xl font-bold" id="stat-recent">1</p></div>
+                        <div><p class="text-xs text-gray-400">即将截止</p><p class="text-2xl font-bold" id="stat-tasks">0</p></div>
+                        <div><p class="text-xs text-gray-400">候选作品</p><p class="text-2xl font-bold" id="stat-candidates">0</p></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <div class="flex justify-between mb-4">
+                        <h3 class="font-bold">今日整理目标</h3>
+                        <button onclick="drawRandomTarget()" class="text-xs text-indigo-500"><i class="fas fa-random"></i> 抽一个</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="flex justify-between p-2 bg-gray-50 rounded"><span>作品缺少源文件</span><span class="font-bold" id="target-files">0</span></div>
+                        <div class="flex justify-between p-2 bg-gray-50 rounded text-red-500"><span>作品缺少设计说明</span><span class="font-bold" id="target-desc">1</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 3. 右侧工具栏 -->
+    <aside class="w-80 bg-gray-50 border-l border-gray-200 p-6 space-y-8">
+        <!-- 上次项目 -->
+        <div>
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">继续上次项目</h4>
+            <div class="bg-white p-4 rounded-xl shadow-sm flex gap-4 items-center">
+                <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center"><i class="fas fa-image text-gray-400"></i></div>
+                <div>
+                    <p class="font-bold" id="last-project-name">城市海报</p>
+                    <p class="text-xs text-gray-400">平面视觉 · 已完成</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模式切换 -->
+        <div>
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">今天的工作台</h4>
+            <div class="space-y-3">
+                <div class="mode-item active" onclick="switchMode('SILENT_ORGANIZE')">
+                    <div class="flex-1">
+                        <p class="font-bold text-sm">安静整理</p>
+                        <p class="text-[10px] text-gray-400 italic">补资料、归档、慢慢整理。</p>
+                    </div>
+                    <div class="w-8 h-4 bg-indigo-500 rounded-full"></div>
+                </div>
+                <div class="mode-item" onclick="switchMode('FOCUS_EDIT')">
+                    <div class="flex-1">
+                        <p class="font-bold text-sm">专注修改</p>
+                        <p class="text-[10px] text-gray-400 italic">改源文件、处理作业。</p>
+                    </div>
+                    <div class="w-8 h-4 bg-gray-300 rounded-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 夜间模式 -->
+        <div class="flex justify-between items-center border-t pt-4">
+            <span class="text-sm font-bold">夜间模式</span>
+            <button id="dark-mode-toggle" class="w-12 h-6 bg-gray-300 rounded-full relative transition">
+                <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform" id="toggle-dot"></div>
+            </button>
+        </div>
+    </aside>
+</div>
+
+<!-- 新建作品弹窗 -->
+<div id="createModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeCreateModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold">新建作品</h3>
+                <button onclick="closeCreateModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="createProjectForm" class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">作品名称</label>
+                    <input type="text" id="projectName" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="给你的作品起个名字">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">作品类型</label>
+                    <select id="projectType" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="平面设计">平面设计</option>
+                        <option value="插画">插画</option>
+                        <option value="UI/UX">UI/UX</option>
+                        <option value="摄影">摄影</option>
+                        <option value="3D建模">3D建模</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">作品状态</label>
+                    <div class="grid grid-cols-4 gap-3">
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300">
+                            <input type="radio" name="status" value="草稿" checked>
+                            <span class="text-sm">草稿</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300">
+                            <input type="radio" name="status" value="进行中">
+                            <span class="text-sm">进行中</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300">
+                            <input type="radio" name="status" value="已完成">
+                            <span class="text-sm">已完成</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300">
+                            <input type="radio" name="status" value="归档">
+                            <span class="text-sm">归档</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">作品描述</label>
+                    <textarea id="projectDesc" rows="3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="简单描述一下这个作品..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">标签</label>
+                    <input type="text" id="projectTags" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="多个标签用逗号分隔">
+                </div>
+                <div class="pt-4 flex gap-3 justify-end">
+                    <button type="button" onclick="closeCreateModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition shadow-lg">创建作品</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加素材弹窗 -->
+<div id="assetModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeAssetModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold">添加素材</h3>
+                <button onclick="closeAssetModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="assetForm" class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择作品</label>
+                    <select id="assetProject" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- 不关联作品 --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">上传文件</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-400 transition cursor-pointer" id="assetDropzone">
+                        <input type="file" id="assetFile" class="hidden" multiple accept="image/*,video/*,.pdf,.psd,.ai,.sketch,.fig">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                        <p class="text-gray-600 mb-1">点击或拖拽文件到这里</p>
+                        <p class="text-xs text-gray-400">支持图片、视频、PDF、设计文件等</p>
+                    </div>
+                    <div id="assetFileList" class="mt-4 space-y-2"></div>
+                </div>
+                <div class="pt-4 flex gap-3 justify-end">
+                    <button type="button" onclick="closeAssetModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition shadow-lg">上传素材</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 保存提示词弹窗 -->
+<div id="promptModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closePromptModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-xl font-bold">保存提示词</h3>
+                <button onclick="closePromptModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="promptForm" class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择作品</label>
+                    <select id="promptProject" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- 不关联作品 --</option>
+                    </select>
+                </div>
+                <div>
+                    <div class="flex gap-2 mb-3">
+                        <button type="button" class="prompt-input-type-btn px-4 py-2 rounded-lg border border-purple-500 bg-purple-50 text-purple-700 font-medium" data-type="text">输入文字</button>
+                        <button type="button" class="prompt-input-type-btn px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-400" data-type="file">上传文件</button>
+                    </div>
+                    <div id="promptTextArea">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">提示词内容</label>
+                        <textarea id="promptContent" rows="6" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="粘贴或输入你的提示词..."></textarea>
+                    </div>
+                    <div id="promptFileArea" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">上传文件</label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition cursor-pointer" id="promptDropzone">
+                            <input type="file" id="promptFile" class="hidden" accept=".txt,.md,.json">
+                            <i class="fas fa-file-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-600 mb-1">点击或拖拽文件到这里</p>
+                            <p class="text-xs text-gray-400">支持 .txt, .md, .json 文件</p>
+                        </div>
+                        <div id="promptFileName" class="mt-2 text-sm text-gray-600"></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">标签</label>
+                    <input type="text" id="promptTags" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="多个标签用逗号分隔">
+                </div>
+                <div class="pt-4 flex gap-3 justify-end">
+                    <button type="button" onclick="closePromptModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition shadow-lg">保存提示词</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
