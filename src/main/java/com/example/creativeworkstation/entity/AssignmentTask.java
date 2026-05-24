@@ -11,6 +11,8 @@ public class AssignmentTask {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    private Long userId; // 所属用户ID
 
     @Column(nullable = false)
     private String title;

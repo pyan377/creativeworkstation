@@ -3,6 +3,8 @@ package com.example.creativeworkstation.service;
 import com.example.creativeworkstation.entity.WorkProject;
 import com.example.creativeworkstation.repository.AssignmentTaskRepository;
 import com.example.creativeworkstation.repository.WorkProjectRepository;
+import com.example.creativeworkstation.util.SessionUtil;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,24 +23,21 @@ public class DashboardService {
     @Autowired
     private AssignmentTaskRepository taskRepository;
 
-    public Map<String, Object> getSummaryStats() {
+    public Map<String, Object> getSummaryStats(Long userId) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime sevenDaysAgo = now.minusDays(7);
         LocalDateTime threeDaysLater = now.plusDays(3);
 
         // 1. 概览统计
-        long recentProjectsCount = projectRepository.countByCreatedAtAfter(sevenDaysAgo);
-        long upcomingTasksCount = taskRepository.findUpcomingTasks(now, threeDaysLater).size();
-        long candidateProjectsCount = projectRepository.countByIsCandidateTrue(); // 假设已实现
+        long recentProjectsCount = projectRepository.countByUserIdAndCreatedAtAfter(userId, sevenDaysAgo);
+        long upcomingTasksCount = 0; // 暂时0，等添加用户后再更新
+        long candidateProjectsCount = projectRepository.countByUserIdAndIsCandidateTrue(userId);
 
         // 2. 今日整理目标
-        long missingSourceFilesCount = projectRepository.countBySourceFileIsNull();
-        long missingDescriptionCount = projectRepository.countByDescriptionIsNull(); // 假设已实现
-        // 任务即将截止，复用 upcomingTasksCount
+        long missingSourceFilesCount = projectRepository.countByUserIdAndSourceFileIsNull(userId);
+        long missingDescriptionCount = projectRepository.countByUserIdAndDescriptionIsNull(userId);
 
-        // 3. 待完善作品总数 (缺少源文件或描述)
-        // 注意：这里需要 JPA Query 来实现 (count by sourceFile is null OR description is null)
-        // 为简化，暂且用上面两个累加，实际应更精确
+        // 3. 待完善作品总数
         long incompleteProjectsCount = missingSourceFilesCount + missingDescriptionCount;
 
         Map<String, Long> overview = Map.of(
@@ -50,21 +49,19 @@ public class DashboardService {
         Map<String, Long> targets = Map.of(
                 "missingSourceFilesCount", missingSourceFilesCount,
                 "missingDescriptionCount", missingDescriptionCount,
-                "upcomingTasksCount", upcomingTasksCount, // 同样作为目标显示
-                "completedReadyToJoinCount", 0L // 这个字段在需求中未明确，先设为0
+                "upcomingTasksCount", upcomingTasksCount,
+                "completedReadyToJoinCount", 0L
         );
 
         return Map.of("overview", overview, "targets", targets);
     }
 
-    public Optional<WorkProject> getRandomIncompleteProject() {
+    public Optional<WorkProject> getRandomIncompleteProject(Long userId) {
         // 1. 查找所有"待完善"的作品
-        // 实际生产中，这里需要一个更优的查询，一次性获取 (sourceFile IS NULL OR description IS NULL) 的项目
-        // 为演示，我们先通过两次查询，然后合并，再随机选一个
-        List<WorkProject> projectsMissingSource = projectRepository.findBySourceFileIsNull();
-        List<WorkProject> projectsMissingDescription = projectRepository.findByDescriptionIsNull();
+        List<WorkProject> projectsMissingSource = projectRepository.findByUserIdAndSourceFileIsNull(userId);
+        List<WorkProject> projectsMissingDescription = projectRepository.findByUserIdAndDescriptionIsNull(userId);
 
-        // 合并列表，并去重 (如果一个项目同时缺少源文件和描述)
+        // 合并列表，并去重
         List<WorkProject> allIncompleteProjects = new java.util.ArrayList<>(projectsMissingSource);
         for(WorkProject p : projectsMissingDescription) {
             if (!allIncompleteProjects.contains(p)) {

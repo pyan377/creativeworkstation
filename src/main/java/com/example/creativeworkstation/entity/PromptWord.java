@@ -12,6 +12,8 @@ public class PromptWord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long userId; // 所属用户ID
+    
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
