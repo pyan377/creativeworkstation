@@ -3,6 +3,8 @@ package com.example.creativeworkstation.controller;
 import com.example.creativeworkstation.entity.CreativeAsset;
 import com.example.creativeworkstation.repository.CreativeAssetRepository;
 import com.example.creativeworkstation.service.AssetService;
+import com.example.creativeworkstation.util.SessionUtil;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -19,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -35,9 +38,15 @@ public class AssetController {
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "projectId", required = false) Long projectId) {
+            @RequestParam(value = "projectId", required = false) Long projectId,
+            HttpSession session) {
+        Long userId = SessionUtil.getCurrentUserId(session);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
         try {
-            CreativeAsset savedAsset = assetService.uploadAsset(file, projectId);
+            CreativeAsset savedAsset = assetService.uploadAsset(file, projectId, userId);
             return ResponseEntity.ok(savedAsset);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "文件保存失败: " + e.getMessage()));
@@ -45,18 +54,27 @@ public class AssetController {
     }
 
     @GetMapping
-    public List<CreativeAsset> getAll() {
-        return assetRepository.findAll();
+    public ResponseEntity<List<CreativeAsset>> getAll(HttpSession session) {
+        Long userId = SessionUtil.getCurrentUserId(session);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(assetRepository.findByUserId(userId));
     }
 
     @GetMapping("/{id}/preview")
-    public ResponseEntity<Resource> previewFile(@PathVariable Long id) {
+    public ResponseEntity<Resource> previewFile(@PathVariable Long id, HttpSession session) {
+        Long userId = SessionUtil.getCurrentUserId(session);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
         try {
             System.out.println("请求预览资产 ID: " + id);
             
             CreativeAsset asset = assetRepository.findById(id).orElse(null);
-            if (asset == null) {
-                System.out.println("未找到 ID 为 " + id + " 的资产记录");
+            if (asset == null || !userId.equals(asset.getUserId())) {
+                System.out.println("未找到 ID 为 " + id + " 的资产记录或无权限");
                 return ResponseEntity.notFound().build();
             }
             
@@ -91,7 +109,12 @@ public class AssetController {
     }
 
     @GetMapping("/export")
-    public ResponseEntity<byte[]> exportAssets(@RequestParam String ids) {
+    public ResponseEntity<byte[]> exportAssets(@RequestParam String ids, HttpSession session) {
+        Long userId = SessionUtil.getCurrentUserId(session);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
         try {
             List<Long> assetIds = Arrays.stream(ids.split(","))
                     .map(String::trim)
@@ -104,6 +127,13 @@ public class AssetController {
             }
 
             List<CreativeAsset> assets = assetRepository.findAllById(assetIds);
+            
+            // 检查所有资产是否属于当前用户
+            for (CreativeAsset asset : assets) {
+                if (!userId.equals(asset.getUserId())) {
+                    return ResponseEntity.status(403).build();
+                }
+            }
             
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (ZipOutputStream zos = new ZipOutputStream(baos)) {
@@ -132,8 +162,14 @@ public class AssetController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (assetRepository.existsById(id)) {
+    public ResponseEntity<Void> delete(@PathVariable Long id, HttpSession session) {
+        Long userId = SessionUtil.getCurrentUserId(session);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        Optional<CreativeAsset> asset = assetRepository.findById(id);
+        if (asset.isPresent() && userId.equals(asset.get().getUserId())) {
             assetRepository.deleteById(id);
             return ResponseEntity.ok().build();
         }

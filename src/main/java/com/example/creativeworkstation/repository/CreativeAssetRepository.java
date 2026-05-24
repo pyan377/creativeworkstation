@@ -10,4 +10,11 @@ import java.util.List;
 public interface CreativeAssetRepository extends JpaRepository<CreativeAsset, Long> {
     // 根据项目ID查询关联素材
     List<CreativeAsset> findByProjectId(Long projectId);
+    
+    // ========== 用户相关查询 ==========
+    List<CreativeAsset> findByUserId(Long userId);
+    List<CreativeAsset> findByUserIdAndProjectId(Long userId, Long projectId);
+    
+    // 按用户ID统计
+    long countByUserId(Long userId);
 }

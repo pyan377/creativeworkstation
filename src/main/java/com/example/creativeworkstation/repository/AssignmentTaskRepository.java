@@ -10,6 +10,7 @@ import java.util.List;
 
 @Repository
 public interface AssignmentTaskRepository extends JpaRepository<AssignmentTask, Long> {
+    List<AssignmentTask> findByUserId(Long userId);
 
     // 查询即将截止的任务 (比如 3 天内)
     @Query("SELECT t FROM AssignmentTask t WHERE t.status = '待办' AND t.deadline <= :threeDaysLater AND t.deadline >= :now")

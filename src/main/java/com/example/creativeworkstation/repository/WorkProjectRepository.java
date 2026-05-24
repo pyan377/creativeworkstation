@@ -42,4 +42,20 @@ public interface WorkProjectRepository extends JpaRepository<WorkProject, Long> 
     
     // 11. 查询状态在指定列表中的项目
     List<WorkProject> findByStatusIn(List<String> statuses);
+
+    // ========== 用户相关查询 ==========
+    List<WorkProject> findByUserId(Long userId);
+    List<WorkProject> findByUserIdAndCategory(Long userId, String category);
+    List<WorkProject> findByUserIdAndStatus(Long userId, String status);
+    List<WorkProject> findByUserIdAndCategoryAndStatus(Long userId, String category, String status);
+    List<WorkProject> findByUserIdAndSourceFileIsNull(Long userId);
+    List<WorkProject> findByUserIdAndDescriptionIsNull(Long userId);
+    List<WorkProject> findByUserIdAndStatusIn(Long userId, List<String> statuses);
+    
+    // 按用户ID统计
+    long countByUserId(Long userId);
+    long countByUserIdAndIsCandidateTrue(Long userId);
+    long countByUserIdAndSourceFileIsNull(Long userId);
+    long countByUserIdAndDescriptionIsNull(Long userId);
+    long countByUserIdAndCreatedAtAfter(Long userId, LocalDateTime date);
 }

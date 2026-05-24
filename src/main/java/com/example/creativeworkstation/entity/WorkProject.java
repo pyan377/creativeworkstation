@@ -12,6 +12,9 @@ public class WorkProject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    private Long userId; // 所属用户ID
+    
     private String title;
     private String category;
     private String status;

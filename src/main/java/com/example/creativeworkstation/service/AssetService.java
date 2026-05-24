@@ -20,7 +20,7 @@ public class AssetService {
     @Autowired
     private CreativeAssetRepository assetRepository;
 
-    public CreativeAsset uploadAsset(MultipartFile file, Long projectId) throws IOException {
+    public CreativeAsset uploadAsset(MultipartFile file, Long projectId, Long userId) throws IOException {
         // 1. 确保物理文件夹存在
         Path storageDirectory = Paths.get(uploadDir);
         if (!Files.exists(storageDirectory)) {
@@ -43,6 +43,7 @@ public class AssetService {
 
         // 4. 将记录存入数据库
         CreativeAsset asset = new CreativeAsset();
+        asset.setUserId(userId);
         asset.setProjectId(projectId);
         asset.setFileName(originalFilename);
         asset.setFileSize(file.getSize());

@@ -12,6 +12,7 @@ public class CreativeAsset {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long userId; // 所属用户ID
     private Long projectId;
     private String fileName;
 

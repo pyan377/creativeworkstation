@@ -8,5 +8,7 @@ import java.util.List;
 
 @Repository
 public interface PromptWordRepository extends JpaRepository<PromptWord, Long> {
+    List<PromptWord> findByUserId(Long userId);
     List<PromptWord> findByProjectIdOrderByRatingDescCreatedAtDesc(Long projectId);
+    List<PromptWord> findByUserIdAndProjectIdOrderByRatingDescCreatedAtDesc(Long userId, Long projectId);
 }
