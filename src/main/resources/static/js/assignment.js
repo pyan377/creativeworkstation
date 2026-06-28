@@ -112,7 +112,8 @@ function getTaskTypeLabel(taskType) {
 }
 
 function renderTaskCard(task) {
-    const overdue = isOverdue(task.deadline);
+    const overdue = isTaskOverdue(task.deadline, task.status);
+    const deadlineClass = getDeadlineTextClass(task.status, overdue);
     const priority = PRIORITY_LABELS[task.priority] || PRIORITY_LABELS[2];
     const typeLabel = getTaskTypeLabel(task.taskType);
     const deadlineText = task.deadline
@@ -132,7 +133,7 @@ function renderTaskCard(task) {
                 ${task.platform ? `<span class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">${escapeHtml(task.platform)}</span>` : ''}
                 <span class="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">${escapeHtml(typeLabel)}</span>
             </div>
-            <p class="text-xs mb-3 ${overdue ? 'text-red-500 font-medium' : 'text-gray-400'}">
+            <p class="text-xs mb-3 ${deadlineClass}">
                 <i class="far fa-clock mr-1"></i>${overdue ? '已超期 · ' : ''}${deadlineText}
             </p>
             <button onclick="event.stopPropagation(); advanceTask(${task.id}, '${task.status}')"
@@ -154,9 +155,17 @@ async function advanceTask(id, currentStatus) {
     }
 }
 
-function isOverdue(deadline) {
+function isTaskOverdue(deadline, status) {
     if (!deadline) return false;
+    if (status === 'DONE') return false;
+    if (status !== 'TODO' && status !== 'DOING') return false;
     return new Date(deadline) < new Date();
+}
+
+function getDeadlineTextClass(status, overdue) {
+    if (status === 'DONE') return 'text-gray-400';
+    if (overdue) return 'text-red-500 font-medium';
+    return 'text-gray-400';
 }
 
 function formatDeadline(deadline) {
