@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作业任务 - Portfolio Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+<div class="flex h-screen overflow-hidden">
+    <!-- 左侧导航栏 -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div class="p-6">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <span class="p-2 bg-indigo-600 text-white rounded-lg"><i class="fas fa-palette"></i></span>
+                个人创作工作台
+            </h1>
+            <p class="text-xs text-gray-400 mt-1">Portfolio Studio</p>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 flex flex-col gap-y-2 overflow-y-auto">
+            <a href="index.html" class="nav-item group">
+                <div class="nav-icon-box"><i class="fas fa-home"></i></div>
+                <span class="nav-text">首页</span>
+            </a>
+            <a href="projects.html" class="nav-item group">
+                <div class="nav-icon-box"><i class="fas fa-th-large"></i></div>
+                <span class="nav-text">作品项目</span>
+            </a>
+            <a href="assets.html" class="nav-item group">
+                <div class="nav-icon-box"><i class="fas fa-gem"></i></div>
+                <span class="nav-text">创作资产</span>
+            </a>
+            <a href="assignment.html" class="nav-item active group">
+                <div class="nav-icon-box"><i class="fas fa-tasks"></i></div>
+                <span class="nav-text">作业任务</span>
+            </a>
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box"><i class="fas fa-star"></i></div>
+                <span class="nav-text">作品集候选</span>
+            </a>
+
+            <div class="mt-auto"></div>
+
+            <div id="userInfo" class="px-4 py-4 border-t border-gray-100">
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-indigo-600"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p id="userName" class="text-sm font-medium text-gray-800 truncate">用户</p>
+                        <p class="text-xs text-gray-500">已登录</p>
+                    </div>
+                    <button onclick="handleLogout()" class="text-gray-400 hover:text-red-500 transition" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box"><i class="fas fa-cog"></i></div>
+                <span class="nav-text">设置</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <header class="p-6 flex justify-between items-center bg-white/50 backdrop-blur-md border-b border-gray-100">
+            <div>
+                <h2 class="text-2xl font-bold">作业任务</h2>
+                <p class="text-sm text-gray-500 mt-1">看板视图 · 拖拽流转你的创作任务</p>
+            </div>
+            <button onclick="openTaskModal()" class="bg-indigo-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-indigo-700 transition text-sm font-medium">
+                <i class="fas fa-plus mr-1"></i> 添加任务
+            </button>
+        </header>
+
+        <section class="flex-1 overflow-x-auto p-6">
+            <div class="flex gap-6 h-full min-w-[960px]">
+                <!-- 待办 -->
+                <div class="flex-1 flex flex-col min-w-[280px]">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                        <h3 class="font-bold text-gray-700">待办</h3>
+                        <span id="count-todo" class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="column-todo" class="flex-1 space-y-3 overflow-y-auto kanban-column bg-gray-100/50 rounded-2xl p-4"></div>
+                </div>
+
+                <!-- 进行中 -->
+                <div class="flex-1 flex flex-col min-w-[280px]">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-3 h-3 rounded-full bg-indigo-500"></span>
+                        <h3 class="font-bold text-gray-700">进行中</h3>
+                        <span id="count-doing" class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="column-doing" class="flex-1 space-y-3 overflow-y-auto kanban-column bg-indigo-50/30 rounded-2xl p-4"></div>
+                </div>
+
+                <!-- 已完成 -->
+                <div class="flex-1 flex flex-col min-w-[280px]">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <h3 class="font-bold text-gray-700">已完成</h3>
+                        <span id="count-done" class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="column-done" class="flex-1 space-y-3 overflow-y-auto kanban-column bg-green-50/30 rounded-2xl p-4"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- 添加/编辑作业任务弹窗 -->
+<div id="taskModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeTaskModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 id="taskModalTitle" class="text-xl font-bold">添加作业任务</h3>
+                <button type="button" onclick="closeTaskModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="taskForm" class="p-6 space-y-5">
+                <input type="hidden" id="editingTaskId" value="">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">任务名称</label>
+                    <input type="text" id="taskTitle" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="输入任务标题">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">任务描述</label>
+                    <textarea id="taskDescription" rows="2" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="可选，补充任务说明"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">截止时间</label>
+                    <input type="datetime-local" id="taskDeadline" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">关联作品</label>
+                    <select id="taskProjectId" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">不关联作品</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">任务类型</label>
+                    <input type="text" id="taskType" list="taskTypeOptions" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="选择或输入自定义类型">
+                    <datalist id="taskTypeOptions">
+                        <option value="商单"></option>
+                        <option value="日常"></option>
+                        <option value="活动"></option>
+                    </datalist>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">优先级</label>
+                    <select id="taskPriority" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="1">高优先级</option>
+                        <option value="2" selected>中优先级</option>
+                        <option value="3">低优先级</option>
+                    </select>
+                </div>
+                <div class="pt-2 flex gap-3 justify-end">
+                    <button type="button" onclick="closeTaskModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" id="taskSubmitBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition shadow-lg">创建任务</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/assignment.js"></script>
+</body>
+</html>

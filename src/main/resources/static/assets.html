@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创作资产 - Portfolio Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+<div class="flex h-screen overflow-hidden">
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div class="p-6">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <span class="p-2 bg-indigo-600 text-white rounded-lg"><i class="fas fa-palette"></i></span>
+                个人创作工作台
+            </h1>
+            <p class="text-xs text-gray-400 mt-1">Portfolio Studio</p>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 flex flex-col gap-y-2 overflow-y-auto">
+            <a href="index.html" class="nav-item group">
+                <div class="nav-icon-box"><i class="fas fa-home"></i></div>
+                <span class="nav-text">首页</span>
+            </a>
+            <a href="projects.html" class="nav-item group">
+                <div class="nav-icon-box"><i class="fas fa-th-large"></i></div>
+                <span class="nav-text">作品项目</span>
+            </a>
+            <a href="assets.html" class="nav-item active group">
+                <div class="nav-icon-box"><i class="fas fa-gem"></i></div>
+                <span class="nav-text">创作资产</span>
+            </a>
+            <a href="assignment.html" class="nav-item group">
+                <div class="nav-icon-box"><i class="fas fa-tasks"></i></div>
+                <span class="nav-text">作业任务</span>
+            </a>
+            <a href="javascript:void(0)" class="nav-item group" onclick="showDevelopmentAlert()">
+                <div class="nav-icon-box"><i class="fas fa-star"></i></div>
+                <span class="nav-text">作品集候选</span>
+            </a>
+
+            <div class="mt-auto"></div>
+
+            <div id="userInfo" class="px-4 py-4 border-t border-gray-100">
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-indigo-600"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p id="userName" class="text-sm font-medium text-gray-800 truncate">用户</p>
+                        <p class="text-xs text-gray-500">已登录</p>
+                    </div>
+                    <button onclick="handleLogout()" class="text-gray-400 hover:text-red-500 transition" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <a href="javascript:void(0)" class="nav-item group">
+                <div class="nav-icon-box"><i class="fas fa-cog"></i></div>
+                <span class="nav-text">设置</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <header class="p-6 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-10">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold">创作资产</h2>
+                    <p class="text-sm text-gray-500 mt-1">中央素材库 · 批量上传与关联作品</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="openUploadModal()" class="px-5 py-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition text-sm font-medium">
+                        <i class="fas fa-cloud-upload-alt mr-1"></i>批量上传素材
+                    </button>
+                    <button id="batchAssignBtn" onclick="openAssignModal()" disabled
+                            class="px-5 py-2 bg-purple-600 text-white rounded-full shadow-lg transition text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-purple-700">
+                        <i class="fas fa-link mr-1"></i>批量加入作品
+                    </button>
+                    <button id="batchDeleteBtn" onclick="handleBatchDelete()" disabled
+                            class="px-5 py-2 border border-red-300 text-red-600 bg-red-50 rounded-full shadow-sm transition text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-red-100">
+                        <i class="fas fa-trash-alt mr-1"></i>批量删除
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 mt-5">
+                <div class="flex flex-wrap gap-2">
+                <button data-category="" onclick="switchCategory('')" class="category-tab active px-4 py-2 rounded-full text-sm font-medium transition">全部</button>
+                <button data-category="DESIGN" onclick="switchCategory('DESIGN')" class="category-tab px-4 py-2 rounded-full text-sm font-medium transition">🎨 平面设计</button>
+                <button data-category="VIDEO" onclick="switchCategory('VIDEO')" class="category-tab px-4 py-2 rounded-full text-sm font-medium transition">🎬 视频</button>
+                <button data-category="PHOTO" onclick="switchCategory('PHOTO')" class="category-tab px-4 py-2 rounded-full text-sm font-medium transition">📷 照片</button>
+                </div>
+                <select id="filterStatus" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <option value="">全部状态</option>
+                    <option value="true">已关联</option>
+                    <option value="false">未分配</option>
+                </select>
+            </div>
+        </header>
+
+        <section class="flex-1 overflow-y-auto p-6">
+            <div id="assetGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+            <div id="emptyState" class="hidden text-center py-20">
+                <i class="fas fa-images text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 mb-4">素材库还是空的，点击「批量上传素材」开始吧</p>
+                <button onclick="openUploadModal()" class="px-5 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition text-sm">立即上传</button>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- 批量上传弹窗 -->
+<div id="uploadModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeUploadModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold">批量上传素材</h3>
+                <button type="button" onclick="closeUploadModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="uploadForm" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">素材分类</label>
+                    <select id="uploadCategory" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="DESIGN">平面设计</option>
+                        <option value="VIDEO">视频</option>
+                        <option value="PHOTO">照片</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择文件（可多选）</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition cursor-pointer" id="uploadDropzone">
+                        <input type="file" id="uploadFiles" class="hidden" multiple accept="image/*,video/*,.pdf,.psd,.ai,.sketch,.fig,.mp4,.mov,.avi">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                        <p class="text-gray-600 mb-1">点击或拖拽文件到这里</p>
+                        <p class="text-xs text-gray-400">支持图片、视频、设计源文件等</p>
+                    </div>
+                    <div id="uploadFileList" class="mt-4 space-y-2 max-h-40 overflow-y-auto"></div>
+                </div>
+                <div id="uploadLoading" class="hidden text-center text-sm text-blue-600">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>正在上传，请稍候...
+                </div>
+                <div class="pt-2 flex gap-3 justify-end">
+                    <button type="button" onclick="closeUploadModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" id="uploadSubmitBtn" class="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition shadow-lg">开始上传</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 批量加入作品弹窗 -->
+<div id="assignModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeAssignModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold">批量加入作品</h3>
+                <button type="button" onclick="closeAssignModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="assignForm" class="p-6 space-y-5">
+                <p class="text-sm text-gray-500">已选择 <span id="assignCount" class="font-bold text-purple-600">0</span> 个素材</p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">请选择目标作品</label>
+                    <select id="assignProjectId" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+                <div id="assignLoading" class="hidden text-center text-sm text-purple-600">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>正在关联，请稍候...
+                </div>
+                <div class="pt-2 flex gap-3 justify-end">
+                    <button type="button" onclick="closeAssignModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" id="assignSubmitBtn" class="px-6 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition shadow-lg">确认关联</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/assets.js"></script>
+</body>
+</html>
