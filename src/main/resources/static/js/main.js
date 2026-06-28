@@ -3,6 +3,7 @@ let selectedAssets = [];
 let selectedPromptFile = null;
 let promptInputType = 'text';
 let currentUser = null;
+let urgentTaskId = null;
 
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', async () => {
@@ -51,6 +52,9 @@ function initEventListeners() {
     document.getElementById('promptForm').addEventListener('submit', handleSavePrompt);
     initPromptDropzone();
     initPromptTypeButtons();
+
+    // 作业任务表单
+    document.getElementById('taskForm').addEventListener('submit', handleCreateTask);
     
     // 搜索功能
     initSearchFunction();
@@ -84,25 +88,62 @@ async function loadDashboardData() {
         const data = await API.getSummary();
         if (data) {
             document.getElementById('stat-recent').innerText = data.recentCount || 0;
-            document.getElementById('stat-tasks').innerText = data.taskCount || 0;
             document.getElementById('stat-candidates').innerText = data.candidateCount || 0;
             document.getElementById('target-files').innerText = data.missingFiles || 0;
             document.getElementById('target-desc').innerText = data.missingDesc || 0;
+
+            const upcoming = data.upcomingTasks ?? data.taskCount ?? 0;
+            const statTasks = document.getElementById('stat-tasks');
+            statTasks.innerText = upcoming;
+            statTasks.classList.toggle('text-red-500', upcoming > 0);
+            statTasks.classList.toggle('font-bold', upcoming > 0);
+
+            renderUrgentTask(data.urgentTask);
         }
     } catch (err) {
-        console.error("加载数据失败，使用模拟数据", err);
-        const data = {
-            recentCount: 1,
-            taskCount: 0,
-            candidateCount: 2,
-            missingFiles: 0,
-            missingDesc: 1
-        };
-        document.getElementById('stat-recent').innerText = data.recentCount;
-        document.getElementById('stat-tasks').innerText = data.taskCount;
-        document.getElementById('stat-candidates').innerText = data.candidateCount;
-        document.getElementById('target-files').innerText = data.missingFiles;
-        document.getElementById('target-desc').innerText = data.missingDesc;
+        console.error("加载数据失败", err);
+    }
+}
+
+function renderUrgentTask(task) {
+    const panel = document.getElementById('urgent-task-panel');
+    const titleEl = document.getElementById('urgent-task-title');
+    const deadlineEl = document.getElementById('urgent-task-deadline');
+
+    if (!task) {
+        urgentTaskId = null;
+        panel.classList.add('hidden');
+        return;
+    }
+
+    urgentTaskId = task.id;
+    titleEl.textContent = task.title || '未命名任务';
+    deadlineEl.textContent = formatTaskDeadline(task.deadline);
+    deadlineEl.className = isOverdue(task.deadline)
+        ? 'text-xs text-red-500 font-medium mt-1'
+        : 'text-xs text-gray-400 mt-1';
+    panel.classList.remove('hidden');
+}
+
+function formatTaskDeadline(deadline) {
+    if (!deadline) return '未设置截止时间';
+    const date = new Date(deadline);
+    const formatted = date.toLocaleString('zh-CN', {
+        month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+    return isOverdue(deadline) ? `已超期 · ${formatted}` : `截止 ${formatted}`;
+}
+
+function isOverdue(deadline) {
+    if (!deadline) return false;
+    return new Date(deadline) < new Date();
+}
+
+function goToUrgentTask() {
+    if (urgentTaskId) {
+        window.location.href = `assignment.html?highlight=${urgentTaskId}`;
+    } else {
+        window.location.href = 'assignment.html';
     }
 }
 
@@ -609,4 +650,49 @@ async function openProjectDetailFromSearch(projectId) {
     
     // 跳转到项目页面并打开详情
     window.location.href = `projects.html?openProject=${projectId}`;
+}
+
+// ========== 添加作业任务弹窗 ==========
+function openTaskModal() {
+    const modal = document.getElementById('taskModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('taskForm').reset();
+    document.getElementById('taskPriority').value = '2';
+    document.getElementById('taskTitle').focus();
+}
+
+function closeTaskModal() {
+    const modal = document.getElementById('taskModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    document.getElementById('taskForm').reset();
+}
+
+async function handleCreateTask(e) {
+    e.preventDefault();
+
+    const deadlineValue = document.getElementById('taskDeadline').value;
+    const taskTypeValue = document.getElementById('taskType').value.trim();
+
+    const taskData = {
+        title: document.getElementById('taskTitle').value.trim(),
+        description: document.getElementById('taskDescription').value.trim() || null,
+        taskType: taskTypeValue || null,
+        priority: parseInt(document.getElementById('taskPriority').value, 10),
+        status: 'TODO'
+    };
+    if (deadlineValue) {
+        taskData.deadline = deadlineValue;
+    }
+
+    try {
+        await API.createTask(taskData);
+        alert('任务创建成功！');
+        closeTaskModal();
+        loadDashboardData();
+    } catch (err) {
+        console.error('创建任务失败', err);
+        alert('创建失败，请稍后重试');
+    }
 }

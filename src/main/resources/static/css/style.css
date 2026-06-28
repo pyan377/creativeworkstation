@@ -6,7 +6,8 @@
     @apply bg-indigo-600 text-white shadow-md;
 }
 .action-card {
-    @apply bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition hover:-translate-y-1 text-xs font-medium text-gray-600;
+    @apply bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center cursor-pointer transition text-xs font-medium text-gray-600;
+    @apply hover:shadow-md hover:-translate-y-1 hover:border-indigo-200 hover:bg-indigo-50/40;
 }
 .mode-item {
     @apply bg-white p-4 rounded-xl flex items-center border-2 border-transparent cursor-pointer transition;
@@ -79,30 +80,32 @@
 }
 
 /* 通用弹窗样式 */
-#createModal, #assetModal, #promptModal {
+#createModal, #assetModal, #promptModal, #taskModal {
     transition: opacity 0.2s ease;
 }
 
-#createModal.hidden, #assetModal.hidden, #promptModal.hidden {
+#createModal.hidden, #assetModal.hidden, #promptModal.hidden, #taskModal.hidden {
     opacity: 0;
     pointer-events: none;
 }
 
-#createModal:not(.hidden), #assetModal:not(.hidden), #promptModal:not(.hidden) {
+#createModal:not(.hidden), #assetModal:not(.hidden), #promptModal:not(.hidden), #taskModal:not(.hidden) {
     opacity: 1;
 }
 
 /* 弹窗内容动画 */
 #createModal > div:last-child > div,
 #assetModal > div:last-child > div,
-#promptModal > div:last-child > div {
+#promptModal > div:last-child > div,
+#taskModal > div:last-child > div {
     transform: translateY(20px);
     transition: transform 0.3s ease;
 }
 
 #createModal:not(.hidden) > div:last-child > div,
 #assetModal:not(.hidden) > div:last-child > div,
-#promptModal:not(.hidden) > div:last-child > div {
+#promptModal:not(.hidden) > div:last-child > div,
+#taskModal:not(.hidden) > div:last-child > div {
     transform: translateY(0);
 }
 

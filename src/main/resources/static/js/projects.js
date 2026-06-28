@@ -3,6 +3,11 @@ let selectedNewAssets = [];
 let selectedAssets = new Set();
 let currentAssets = [];
 let currentUser = null;
+let selectedLibraryAssetIds = [];
+let libraryAssets = [];
+
+const LIBRARY_IMAGE_TYPES = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
+const LIBRARY_VIDEO_TYPES = ['mp4', 'avi', 'mov', 'wmv', 'webm', 'mkv'];
 
 document.addEventListener('DOMContentLoaded', async () => {
     await checkAuth();
@@ -39,11 +44,10 @@ async function handleLogout() {
 
 function checkUrlForProject() {
     const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('openProject');
+    const projectId = urlParams.get('projectId') || urlParams.get('openProject');
     if (projectId) {
         setTimeout(() => {
-            openProjectDetail(parseInt(projectId));
-            // 清除URL参数
+            openProjectDetail(parseInt(projectId, 10));
             window.history.replaceState({}, document.title, window.location.pathname);
         }, 500);
     }
@@ -54,6 +58,7 @@ function initEventListeners() {
     document.getElementById('filterStatus').addEventListener('change', loadProjects);
     document.getElementById('projectForm').addEventListener('submit', handleProjectSubmit);
     document.getElementById('addAssetForm').addEventListener('submit', handleAddAsset);
+    document.getElementById('addTaskForm').addEventListener('submit', handleAddRelatedTask);
     initAssetDropzone();
 }
 
@@ -125,6 +130,7 @@ async function openProjectDetail(id) {
 
         renderAssets(currentAssets);
         renderPrompts(prompts || []);
+        await loadTasksForProject(id);
         document.getElementById('detailModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     } catch (err) {
@@ -139,6 +145,116 @@ function closeDetailModal() {
     currentProject = null;
     currentAssets = [];
     selectedAssets.clear();
+    document.getElementById('relatedTasks').innerHTML = '';
+    document.getElementById('relatedTaskCount').textContent = '0 个';
+}
+
+const TASK_STATUS_LABELS = {
+    TODO: { text: '待办', class: 'bg-gray-100 text-gray-600' },
+    DOING: { text: '进行中', class: 'bg-indigo-100 text-indigo-600' },
+    REVIEW: { text: '审核', class: 'bg-amber-100 text-amber-700' },
+    DONE: { text: '完成', class: 'bg-green-100 text-green-600' }
+};
+
+async function loadTasksForProject(projectId) {
+    const container = document.getElementById('relatedTasks');
+    const countEl = document.getElementById('relatedTaskCount');
+
+    try {
+        const tasks = await API.getTasksByProject(projectId);
+        countEl.textContent = `${tasks.length} 个`;
+        renderRelatedTasks(tasks);
+    } catch (err) {
+        console.error('加载关联任务失败', err);
+        countEl.textContent = '0 个';
+        container.innerHTML = '<p class="text-red-400 text-sm text-center py-4">加载关联任务失败</p>';
+    }
+}
+
+function renderRelatedTasks(tasks) {
+    const container = document.getElementById('relatedTasks');
+
+    if (!tasks || tasks.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-6 text-gray-400">
+                <i class="fas fa-tasks text-3xl mb-2"></i>
+                <p class="text-sm">暂无关联任务</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = tasks.map(task => {
+        const status = TASK_STATUS_LABELS[task.status] || TASK_STATUS_LABELS.TODO;
+        const deadlineText = task.deadline
+            ? new Date(task.deadline).toLocaleString('zh-CN', {
+                month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            })
+            : '未设置截止';
+
+        return `
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <div class="flex-1 min-w-0 mr-4">
+                    <p class="font-medium text-gray-800 truncate">${escapeHtml(task.title)}</p>
+                    <p class="text-xs text-gray-400 mt-1">
+                        <i class="far fa-clock mr-1"></i>${deadlineText}
+                    </p>
+                </div>
+                <span class="text-xs px-2.5 py-1 rounded-full flex-shrink-0 ${status.class}">${status.text}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function openAddRelatedTaskModal() {
+    if (!currentProject) return;
+
+    document.getElementById('relatedTaskProjectId').value = currentProject.id;
+    document.getElementById('relatedTaskProjectName').textContent = currentProject.title || '未命名';
+    document.getElementById('addTaskForm').reset();
+    document.getElementById('relatedTaskPriority').value = '2';
+    document.getElementById('addTaskModal').classList.remove('hidden');
+    document.getElementById('relatedTaskTitle').focus();
+}
+
+function closeAddRelatedTaskModal() {
+    document.getElementById('addTaskModal').classList.add('hidden');
+    document.getElementById('addTaskForm').reset();
+}
+
+async function handleAddRelatedTask(e) {
+    e.preventDefault();
+
+    if (!currentProject) {
+        alert('请先打开作品详情');
+        return;
+    }
+
+    const deadlineValue = document.getElementById('relatedTaskDeadline').value;
+    const taskTypeValue = document.getElementById('relatedTaskType').value.trim();
+
+    const taskData = {
+        title: document.getElementById('relatedTaskTitle').value.trim(),
+        description: document.getElementById('relatedTaskDescription').value.trim() || null,
+        taskType: taskTypeValue || null,
+        priority: parseInt(document.getElementById('relatedTaskPriority').value, 10),
+        projectId: currentProject.id,
+        status: 'TODO'
+    };
+
+    if (deadlineValue) {
+        taskData.deadline = deadlineValue;
+    }
+
+    try {
+        await API.createTask(taskData);
+        alert('关联任务创建成功！');
+        closeAddRelatedTaskModal();
+        await loadTasksForProject(currentProject.id);
+    } catch (err) {
+        console.error('创建关联任务失败', err);
+        alert('创建失败，请稍后重试');
+    }
 }
 
 function renderAssets(assets) {
@@ -327,6 +443,114 @@ function openAddAssetModal() {
     selectedNewAssets = [];
     document.getElementById('newAssetFileList').innerHTML = '';
     document.getElementById('addAssetModal').classList.remove('hidden');
+}
+
+async function openPickFromLibraryModal() {
+    if (!currentProject) {
+        alert('请先打开作品详情');
+        return;
+    }
+
+    selectedLibraryAssetIds = [];
+    updateLibraryPickCount();
+    document.getElementById('pickLibraryModal').classList.remove('hidden');
+
+    try {
+        libraryAssets = await API.getAssets(null, false);
+        renderLibraryAssetGrid();
+    } catch (err) {
+        console.error('加载素材库失败', err);
+        libraryAssets = [];
+        renderLibraryAssetGrid();
+    }
+}
+
+function closePickFromLibraryModal() {
+    document.getElementById('pickLibraryModal').classList.add('hidden');
+    selectedLibraryAssetIds = [];
+    libraryAssets = [];
+}
+
+function renderLibraryAssetGrid() {
+    const grid = document.getElementById('libraryAssetGrid');
+    const emptyState = document.getElementById('libraryEmptyState');
+
+    if (!libraryAssets || libraryAssets.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+    }
+
+    emptyState.classList.add('hidden');
+    grid.innerHTML = libraryAssets.map(asset => {
+        const isSelected = selectedLibraryAssetIds.includes(asset.id);
+        const preview = getLibraryAssetPreview(asset);
+        return `
+            <div class="relative bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${isSelected ? 'ring-2 ring-purple-500 ring-offset-1' : ''}">
+                <input type="checkbox"
+                       class="absolute top-2 left-2 w-5 h-5 cursor-pointer z-10 accent-purple-600"
+                       ${isSelected ? 'checked' : ''}
+                       onchange="toggleLibraryAssetSelection(${asset.id}, this.checked)">
+                <div class="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
+                    ${preview}
+                </div>
+                <div class="p-2 border-t border-gray-100">
+                    <p class="text-xs font-medium text-gray-800 truncate" title="${escapeHtml(asset.fileName)}">${escapeHtml(asset.fileName || '未命名')}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getLibraryAssetPreview(asset) {
+    const fileType = (asset.fileType || '').toLowerCase();
+    if (LIBRARY_IMAGE_TYPES.includes(fileType)) {
+        const src = asset.fileUrl || `/api/assets/${asset.id}/preview`;
+        return `<img src="${src}" alt="${escapeHtml(asset.fileName)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='/api/assets/${asset.id}/preview'">`;
+    }
+    if (LIBRARY_VIDEO_TYPES.includes(fileType)) {
+        return `<div class="flex flex-col items-center justify-center text-blue-500"><i class="fas fa-film text-3xl mb-1"></i><span class="text-[10px] text-gray-400">视频</span></div>`;
+    }
+    return `<div class="flex flex-col items-center justify-center text-gray-400"><i class="fas fa-file text-3xl mb-1"></i><span class="text-[10px]">文件</span></div>`;
+}
+
+function toggleLibraryAssetSelection(assetId, checked) {
+    if (checked) {
+        if (!selectedLibraryAssetIds.includes(assetId)) {
+            selectedLibraryAssetIds.push(assetId);
+        }
+    } else {
+        selectedLibraryAssetIds = selectedLibraryAssetIds.filter(id => id !== assetId);
+    }
+    updateLibraryPickCount();
+    renderLibraryAssetGrid();
+}
+
+function updateLibraryPickCount() {
+    document.getElementById('libraryPickCount').textContent = selectedLibraryAssetIds.length;
+    document.getElementById('confirmLibraryPickBtn').disabled = selectedLibraryAssetIds.length === 0;
+}
+
+async function confirmImportFromLibrary() {
+    if (!currentProject || selectedLibraryAssetIds.length === 0) return;
+
+    const btn = document.getElementById('confirmLibraryPickBtn');
+    btn.disabled = true;
+
+    try {
+        await API.batchAssignAssets(selectedLibraryAssetIds, currentProject.id);
+        alert(`已成功导入 ${selectedLibraryAssetIds.length} 个素材！`);
+        closePickFromLibraryModal();
+
+        const assets = await API.getProjectAssets(currentProject.id);
+        currentAssets = assets || [];
+        renderAssets(currentAssets);
+    } catch (err) {
+        console.error('从素材库导入失败', err);
+        alert('导入失败，请稍后重试');
+    } finally {
+        btn.disabled = selectedLibraryAssetIds.length === 0;
+    }
 }
 
 function closeAddAssetModal() {

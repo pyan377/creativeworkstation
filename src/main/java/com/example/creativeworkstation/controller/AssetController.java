@@ -1,5 +1,7 @@
 package com.example.creativeworkstation.controller;
 
+import com.example.creativeworkstation.dto.BatchAssignRequest;
+import com.example.creativeworkstation.dto.BatchDeleteRequest;
 import com.example.creativeworkstation.entity.CreativeAsset;
 import com.example.creativeworkstation.repository.CreativeAssetRepository;
 import com.example.creativeworkstation.service.AssetService;
@@ -14,14 +16,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -37,29 +39,63 @@ public class AssetController {
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
-            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
             @RequestParam(value = "projectId", required = false) Long projectId,
+            @RequestParam(value = "assetCategory", required = false) String assetCategory,
             HttpSession session) {
         Long userId = SessionUtil.getCurrentUserId(session);
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        
+
         try {
-            CreativeAsset savedAsset = assetService.uploadAsset(file, projectId, userId);
-            return ResponseEntity.ok(savedAsset);
+            if (files != null && files.length > 0) {
+                List<CreativeAsset> savedAssets = assetService.uploadAssets(files, assetCategory, userId);
+                return ResponseEntity.ok(savedAssets);
+            }
+            if (file != null && !file.isEmpty()) {
+                CreativeAsset savedAsset = assetService.uploadAsset(file, projectId, assetCategory, userId);
+                return ResponseEntity.ok(savedAsset);
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", "请选择要上传的文件"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "文件保存失败: " + e.getMessage()));
         }
     }
 
-    @GetMapping
-    public ResponseEntity<List<CreativeAsset>> getAll(HttpSession session) {
+    @PutMapping("/batch-assign")
+    public ResponseEntity<?> batchAssign(@RequestBody BatchAssignRequest request, HttpSession session) {
         Long userId = SessionUtil.getCurrentUserId(session);
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(assetRepository.findByUserId(userId));
+        if (request.getProjectId() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "请选择目标作品"));
+        }
+
+        try {
+            List<CreativeAsset> updated = assetService.batchAssign(request.getAssetIds(), request.getProjectId(), userId);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "批量关联失败: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CreativeAsset>> getAll(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) Boolean isAssigned,
+            @RequestParam(required = false) Boolean unassigned,
+            HttpSession session) {
+        Long userId = SessionUtil.getCurrentUserId(session);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(assetService.getAssets(userId, category, projectId, isAssigned, unassigned));
     }
 
     @GetMapping("/{id}/preview")
@@ -68,26 +104,15 @@ public class AssetController {
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        
+
         try {
-            System.out.println("请求预览资产 ID: " + id);
-            
             CreativeAsset asset = assetRepository.findById(id).orElse(null);
             if (asset == null || !userId.equals(asset.getUserId())) {
-                System.out.println("未找到 ID 为 " + id + " 的资产记录或无权限");
                 return ResponseEntity.notFound().build();
             }
-            
-            System.out.println("找到资产: " + asset.getFileName());
-            System.out.println("保存的文件路径: " + asset.getFilePath());
 
             File file = new File(asset.getFilePath());
-            System.out.println("解析后的文件对象: " + file.getAbsolutePath());
-            System.out.println("文件是否存在: " + file.exists());
-            System.out.println("文件是否可读: " + file.canRead());
-            
             if (!file.exists()) {
-                System.out.println("文件不存在于磁盘上");
                 return ResponseEntity.notFound().build();
             }
 
@@ -102,8 +127,6 @@ public class AssetController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + asset.getFileName() + "\"")
                     .body(resource);
         } catch (Exception e) {
-            System.out.println("预览文件时发生错误:");
-            e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -114,7 +137,7 @@ public class AssetController {
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        
+
         try {
             List<Long> assetIds = Arrays.stream(ids.split(","))
                     .map(String::trim)
@@ -127,14 +150,12 @@ public class AssetController {
             }
 
             List<CreativeAsset> assets = assetRepository.findAllById(assetIds);
-            
-            // 检查所有资产是否属于当前用户
             for (CreativeAsset asset : assets) {
                 if (!userId.equals(asset.getUserId())) {
                     return ResponseEntity.status(403).build();
                 }
             }
-            
+
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (ZipOutputStream zos = new ZipOutputStream(baos)) {
                 for (CreativeAsset asset : assets) {
@@ -156,8 +177,24 @@ public class AssetController {
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(baos.toByteArray());
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @DeleteMapping("/batch")
+    public ResponseEntity<?> batchDelete(@RequestBody BatchDeleteRequest request, HttpSession session) {
+        Long userId = SessionUtil.getCurrentUserId(session);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            assetService.batchDelete(request.getIds(), userId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "批量删除失败: " + e.getMessage()));
         }
     }
 
@@ -167,12 +204,12 @@ public class AssetController {
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        
-        Optional<CreativeAsset> asset = assetRepository.findById(id);
-        if (asset.isPresent() && userId.equals(asset.get().getUserId())) {
-            assetRepository.deleteById(id);
+
+        try {
+            assetService.deleteAsset(id, userId);
             return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
     }
 }

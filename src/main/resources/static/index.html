@@ -42,7 +42,7 @@
             </a>
 
             <!-- 创作资产 -->
-            <a href="javascript:void(0)" class="nav-item group">
+            <a href="assets.html" class="nav-item group">
                 <div class="nav-icon-box">
                     <i class="fas fa-gem"></i>
                 </div>
@@ -50,7 +50,7 @@
             </a>
 
             <!-- 作业任务 -->
-            <a href="javascript:void(0)" class="nav-item group">
+            <a href="assignment.html" class="nav-item group">
                 <div class="nav-icon-box">
                     <i class="fas fa-tasks"></i>
                 </div>
@@ -124,24 +124,24 @@
 
             <!-- 快捷功能格图 -->
             <div class="grid grid-cols-5 gap-4">
-                <div class="action-card" onclick="openCreateModal()">
-                    <div class="text-indigo-500 text-2xl mb-2">+</div>
+                <div class="action-card group" onclick="openCreateModal()">
+                    <i class="fas fa-plus text-indigo-500 text-xl mb-2 group-hover:scale-110 transition-transform"></i>
                     <p>新建作品</p>
                 </div>
-                <div class="action-card" onclick="openAssetModal()">
-                    <i class="fas fa-upload text-blue-400 text-xl mb-2"></i>
+                <div class="action-card group" onclick="window.location.href='assets.html?action=upload'">
+                    <i class="fas fa-upload text-blue-500 text-xl mb-2 group-hover:scale-110 transition-transform"></i>
                     <p>添加素材</p>
                 </div>
-                <div class="action-card" onclick="openPromptModal()">
-                    <i class="fas fa-wand-sparkles text-purple-400 text-xl mb-2"></i>
+                <div class="action-card group" onclick="openPromptModal()">
+                    <i class="fas fa-magic text-purple-500 text-xl mb-2 group-hover:scale-110 transition-transform"></i>
                     <p>保存提示词</p>
                 </div>
-                <div class="action-card" onclick="showDevelopmentAlert()">
-                    <i class="fas fa-book text-orange-400 text-xl mb-2"></i>
+                <div class="action-card group" onclick="openTaskModal()">
+                    <i class="fas fa-book text-orange-400 text-xl mb-2 group-hover:scale-110 transition-transform"></i>
                     <p>添加作业任务</p>
                 </div>
-                <div class="action-card" onclick="showDevelopmentAlert()">
-                    <i class="fas fa-star text-yellow-400 text-xl mb-2"></i>
+                <div class="action-card group" onclick="showDevelopmentAlert()">
+                    <i class="fas fa-star text-yellow-400 text-xl mb-2 group-hover:scale-110 transition-transform"></i>
                     <p>查看作品集候选</p>
                 </div>
             </div>
@@ -149,7 +149,7 @@
             <!-- 统计卡片区 -->
             <div class="grid grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <h3 class="font-bold mb-4">今日概览（功能还在更新中）</h3>
+                    <h3 class="font-bold mb-4">今日概览</h3>
                     <div class="grid grid-cols-3 text-center">
                         <div><p class="text-xs text-gray-400">最近作品</p><p class="text-2xl font-bold" id="stat-recent">1</p></div>
                         <div><p class="text-xs text-gray-400">即将截止</p><p class="text-2xl font-bold" id="stat-tasks">0</p></div>
@@ -201,6 +201,16 @@
                         <p class="text-[10px] text-gray-400 italic">改源文件、处理作业。</p>
                     </div>
                     <div class="w-8 h-4 bg-gray-300 rounded-full"></div>
+                </div>
+                <!-- 最紧急任务推荐 -->
+                <div id="urgent-task-panel" class="hidden bg-white p-4 rounded-xl border border-orange-100 shadow-sm cursor-pointer hover:shadow-md transition"
+                     onclick="goToUrgentTask()">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-fire text-orange-500 text-xs"></i>
+                        <span class="text-xs font-bold text-orange-500 uppercase">推荐处理</span>
+                    </div>
+                    <p id="urgent-task-title" class="font-bold text-sm text-gray-800 truncate">暂无紧急任务</p>
+                    <p id="urgent-task-deadline" class="text-xs text-gray-400 mt-1">—</p>
                 </div>
             </div>
         </div>
@@ -362,6 +372,56 @@
                 <div class="pt-4 flex gap-3 justify-end">
                     <button type="button" onclick="closePromptModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
                     <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition shadow-lg">保存提示词</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加作业任务弹窗 -->
+<div id="taskModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeTaskModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold">添加作业任务</h3>
+                <button onclick="closeTaskModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="taskForm" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">任务名称</label>
+                    <input type="text" id="taskTitle" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="输入任务标题">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">任务描述</label>
+                    <textarea id="taskDescription" rows="2" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="可选，补充任务说明"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">截止时间</label>
+                    <input type="datetime-local" id="taskDeadline" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">任务类型</label>
+                    <input type="text" id="taskType" list="taskTypeOptions" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="选择或输入自定义类型">
+                    <datalist id="taskTypeOptions">
+                        <option value="商单"></option>
+                        <option value="日常"></option>
+                        <option value="活动"></option>
+                    </datalist>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">优先级</label>
+                    <select id="taskPriority" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="1">高优先级</option>
+                        <option value="2" selected>中优先级</option>
+                        <option value="3">低优先级</option>
+                    </select>
+                </div>
+                <div class="pt-2 flex gap-3 justify-end">
+                    <button type="button" onclick="closeTaskModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition shadow-lg">创建任务</button>
                 </div>
             </form>
         </div>

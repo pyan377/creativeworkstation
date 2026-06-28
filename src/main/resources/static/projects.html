@@ -36,14 +36,14 @@
                 <span class="nav-text">作品项目</span>
             </a>
 
-            <a href="javascript:void(0)" class="nav-item group">
+            <a href="assets.html" class="nav-item group">
                 <div class="nav-icon-box">
                     <i class="fas fa-gem"></i>
                 </div>
                 <span class="nav-text">创作资产</span>
             </a>
 
-            <a href="javascript:void(0)" class="nav-item group">
+            <a href="assignment.html" class="nav-item group">
                 <div class="nav-icon-box">
                     <i class="fas fa-tasks"></i>
                 </div>
@@ -224,6 +224,22 @@
                     <p id="detailDesc" class="text-gray-700">-</p>
                 </div>
 
+                <!-- 关联任务 -->
+                <div class="border-t pt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <h4 class="font-bold">关联任务</h4>
+                            <span id="relatedTaskCount" class="text-sm text-gray-500">0 个</span>
+                        </div>
+                        <button type="button" onclick="openAddRelatedTaskModal()" class="px-4 py-1.5 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-full transition border border-indigo-100">
+                            <i class="fas fa-plus mr-1"></i>添加关联任务
+                        </button>
+                    </div>
+                    <div id="relatedTasks" class="space-y-3">
+                        <p class="text-gray-400 text-sm text-center py-4">加载中...</p>
+                    </div>
+                </div>
+
                 <div class="border-t pt-6">
                     <div class="flex justify-between items-center mb-4">
                         <div class="flex items-center gap-4">
@@ -236,9 +252,14 @@
                                 <i class="fas fa-check-double mr-1"></i>全选
                             </button>
                         </div>
-                        <button onclick="openAddAssetModal()" class="text-indigo-600 hover:text-indigo-700 text-sm">
-                            <i class="fas fa-plus mr-1"></i>添加素材
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <button onclick="openAddAssetModal()" class="text-indigo-600 hover:text-indigo-700 text-sm">
+                                <i class="fas fa-plus mr-1"></i>添加素材
+                            </button>
+                            <button onclick="openPickFromLibraryModal()" class="text-purple-600 hover:text-purple-700 text-sm">
+                                <i class="fas fa-gem mr-1"></i>从素材库选取
+                            </button>
+                        </div>
                     </div>
                     <div id="detailAssets" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     </div>
@@ -292,6 +313,100 @@
                 <div class="pt-4 flex gap-3 justify-end">
                     <button type="button" onclick="closeAddAssetModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
                     <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition shadow-lg">上传</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 从素材库选取弹窗 -->
+<div id="pickLibraryModal" class="fixed inset-0 z-[60] hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closePickFromLibraryModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+                <div>
+                    <h3 class="text-xl font-bold">从素材库选取素材</h3>
+                    <p class="text-sm text-gray-500 mt-1">仅显示未分配至作品的素材</p>
+                </div>
+                <button type="button" onclick="closePickFromLibraryModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="libraryAssetGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                <div id="libraryEmptyState" class="hidden text-center py-16 text-gray-400">
+                    <i class="fas fa-inbox text-4xl mb-3"></i>
+                    <p class="text-sm">素材库中暂无未分配的素材</p>
+                    <a href="assets.html?action=upload" class="inline-block mt-3 text-purple-600 hover:text-purple-700 text-sm">去素材库上传</a>
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-100 flex justify-between items-center flex-shrink-0">
+                <span class="text-sm text-gray-500">已选择 <span id="libraryPickCount" class="font-bold text-purple-600">0</span> 个</span>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closePickFromLibraryModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="button" id="confirmLibraryPickBtn" onclick="confirmImportFromLibrary()" disabled
+                            class="px-6 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">
+                        确认导入
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加关联任务弹窗 -->
+<div id="addTaskModal" class="fixed inset-0 z-[60] hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeAddRelatedTaskModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold">新建关联任务</h3>
+                <button type="button" onclick="closeAddRelatedTaskModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addTaskForm" class="p-6 space-y-5">
+                <input type="hidden" id="relatedTaskProjectId">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">关联作品</label>
+                    <div class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 flex items-center gap-2">
+                        <i class="fas fa-folder-open text-indigo-400"></i>
+                        <span id="relatedTaskProjectName">—</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">任务名称</label>
+                    <input type="text" id="relatedTaskTitle" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="输入任务标题">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">任务描述</label>
+                    <textarea id="relatedTaskDescription" rows="2" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="可选，补充任务说明"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">截止时间</label>
+                    <input type="datetime-local" id="relatedTaskDeadline" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">任务类型</label>
+                    <input type="text" id="relatedTaskType" list="relatedTaskTypeOptions" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="选择或输入自定义类型">
+                    <datalist id="relatedTaskTypeOptions">
+                        <option value="商单"></option>
+                        <option value="日常"></option>
+                        <option value="活动"></option>
+                    </datalist>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">优先级</label>
+                    <select id="relatedTaskPriority" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="1">高优先级</option>
+                        <option value="2" selected>中优先级</option>
+                        <option value="3">低优先级</option>
+                    </select>
+                </div>
+                <div class="pt-2 flex gap-3 justify-end">
+                    <button type="button" onclick="closeAddRelatedTaskModal()" class="px-6 py-2 border border-gray-200 rounded-full hover:bg-gray-50 transition">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition shadow-lg">创建任务</button>
                 </div>
             </form>
         </div>

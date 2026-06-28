@@ -63,10 +63,42 @@ const API = {
     // 删除项目
     deleteProject: (id) => fetch('/api/projects/' + id, { method: 'DELETE' }).then(handleResponse),
 
-    // 上传素材
+    // 上传素材（单文件，兼容旧页面）
     uploadAsset: (formData) => fetch('/api/assets/upload', {
         method: 'POST',
         body: formData
+    }).then(handleResponse).then(res => res.json()),
+
+    // 批量上传素材
+    uploadAssetsBatch: (formData) => fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData
+    }).then(handleResponse).then(res => res.json()),
+
+    // 获取素材列表（支持分类与关联状态筛选）
+    getAssets: (category, isAssigned) => {
+        const params = new URLSearchParams();
+        if (category) params.append('category', category);
+        if (isAssigned !== null && isAssigned !== undefined && isAssigned !== '') {
+            params.append('isAssigned', isAssigned);
+        }
+        let url = '/api/assets';
+        if (params.toString()) url += '?' + params.toString();
+        return fetch(url).then(handleResponse).then(res => res.json());
+    },
+
+    // 批量删除素材
+    batchDeleteAssets: (ids) => fetch('/api/assets/batch', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+    }).then(handleResponse),
+
+    // 批量关联作品
+    batchAssignAssets: (assetIds, projectId) => fetch('/api/assets/batch-assign', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assetIds, projectId })
     }).then(handleResponse).then(res => res.json()),
 
     // 删除素材
@@ -90,5 +122,26 @@ const API = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating })
-    }).then(handleResponse).then(res => res.json())
+    }).then(handleResponse).then(res => res.json()),
+
+    // 作业任务
+    getTasks: () => fetch('/api/tasks').then(handleResponse).then(res => res.json()),
+
+    getTask: (id) => fetch('/api/tasks/' + id).then(handleResponse).then(res => res.json()),
+
+    getTasksByProject: (projectId) => fetch('/api/tasks/project/' + projectId).then(handleResponse).then(res => res.json()),
+
+    createTask: (data) => fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(handleResponse).then(res => res.json()),
+
+    updateTask: (id, data) => fetch('/api/tasks/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(handleResponse).then(res => res.json()),
+
+    deleteTask: (id) => fetch('/api/tasks/' + id, { method: 'DELETE' }).then(handleResponse)
 };

@@ -12,8 +12,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 映射 /files/** 请求到本地文件夹
+        String location = uploadDir.endsWith("/") ? uploadDir : uploadDir + "/";
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:" + location);
         registry.addResourceHandler("/files/**")
-                .addResourceLocations("file:" + uploadDir + "/");
+                .addResourceLocations("file:" + location);
     }
 }

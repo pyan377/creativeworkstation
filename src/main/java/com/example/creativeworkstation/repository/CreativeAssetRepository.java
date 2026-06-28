@@ -8,13 +8,28 @@ import java.util.List;
 
 @Repository
 public interface CreativeAssetRepository extends JpaRepository<CreativeAsset, Long> {
-    // 根据项目ID查询关联素材
+
     List<CreativeAsset> findByProjectId(Long projectId);
-    
-    // ========== 用户相关查询 ==========
+
+    List<CreativeAsset> findByAssetCategory(String assetCategory);
+
+    List<CreativeAsset> findByProjectIdIsNull();
+
     List<CreativeAsset> findByUserId(Long userId);
+
     List<CreativeAsset> findByUserIdAndProjectId(Long userId, Long projectId);
-    
-    // 按用户ID统计
+
+    List<CreativeAsset> findByUserIdAndAssetCategory(Long userId, String assetCategory);
+
+    List<CreativeAsset> findByUserIdAndProjectIdIsNull(Long userId);
+
+    List<CreativeAsset> findByUserIdAndAssetCategoryAndProjectIdIsNull(Long userId, String assetCategory);
+
+    List<CreativeAsset> findByUserIdAndAssetCategoryAndProjectId(Long userId, String assetCategory, Long projectId);
+
+    List<CreativeAsset> findByUserIdAndProjectIdIsNotNull(Long userId);
+
+    List<CreativeAsset> findByUserIdAndAssetCategoryAndProjectIdIsNotNull(Long userId, String assetCategory);
+
     long countByUserId(Long userId);
 }
