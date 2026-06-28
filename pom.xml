@@ -78,6 +78,12 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Cloudflare R2 (S3 兼容) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.29.45</version>
+        </dependency>
     </dependencies>
 
     <build>

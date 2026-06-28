@@ -1,19 +1,24 @@
 package com.example.creativeworkstation.service;
 
+import com.example.creativeworkstation.config.R2Properties;
 import com.example.creativeworkstation.entity.CreativeAsset;
 import com.example.creativeworkstation.entity.WorkProject;
 import com.example.creativeworkstation.repository.CreativeAssetRepository;
 import com.example.creativeworkstation.repository.WorkProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,8 +27,11 @@ import java.util.UUID;
 @Service
 public class AssetService {
 
-    @Value("${upload.dir}")
-    private String uploadDir;
+    @Autowired
+    private R2Properties r2Properties;
+
+    @Autowired
+    private S3Client s3Client;
 
     @Autowired
     private CreativeAssetRepository assetRepository;
@@ -136,8 +144,38 @@ public class AssetService {
         return getAssets(userId, category, projectId, isAssigned);
     }
 
+    public boolean isR2Asset(CreativeAsset asset) {
+        String fileUrl = asset.getFileUrl();
+        return fileUrl != null && (fileUrl.startsWith("http://") || fileUrl.startsWith("https://"));
+    }
+
+    public InputStream openAssetStream(CreativeAsset asset) throws IOException {
+        if (isR2Asset(asset)) {
+            return s3Client.getObject(GetObjectRequest.builder()
+                    .bucket(r2Properties.getBucketName())
+                    .key(asset.getFilePath())
+                    .build());
+        }
+        Path localPath = Paths.get(asset.getFilePath());
+        if (!Files.exists(localPath)) {
+            throw new IOException("文件不存在");
+        }
+        return Files.newInputStream(localPath);
+    }
+
     private void deletePhysicalFile(CreativeAsset asset) {
         if (asset.getFilePath() == null || asset.getFilePath().isBlank()) {
+            return;
+        }
+        if (isR2Asset(asset)) {
+            try {
+                s3Client.deleteObject(DeleteObjectRequest.builder()
+                        .bucket(r2Properties.getBucketName())
+                        .key(asset.getFilePath())
+                        .build());
+            } catch (Exception ignored) {
+                // 物理文件删除失败不阻断数据库记录清理
+            }
             return;
         }
         try {
@@ -148,11 +186,6 @@ public class AssetService {
     }
 
     private CreativeAsset saveFile(MultipartFile file, Long projectId, String assetCategory, Long userId) throws IOException {
-        Path storageDirectory = Paths.get(uploadDir);
-        if (!Files.exists(storageDirectory)) {
-            Files.createDirectories(storageDirectory);
-        }
-
         String originalFilename = file.getOriginalFilename();
         String fileExtension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
@@ -160,8 +193,19 @@ public class AssetService {
         }
 
         String storedFileName = UUID.randomUUID().toString() + (fileExtension.isEmpty() ? "" : "." + fileExtension);
-        Path targetLocation = storageDirectory.resolve(storedFileName);
-        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+        String contentType = file.getContentType();
+        if (contentType == null || contentType.isBlank()) {
+            contentType = "application/octet-stream";
+        }
+
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(r2Properties.getBucketName())
+                        .key(storedFileName)
+                        .contentType(contentType)
+                        .build(),
+                RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+        );
 
         CreativeAsset asset = new CreativeAsset();
         asset.setUserId(userId);
@@ -170,9 +214,17 @@ public class AssetService {
         asset.setFileSize(file.getSize());
         asset.setFileType(fileExtension);
         asset.setAssetCategory(assetCategory);
-        asset.setFilePath(targetLocation.toAbsolutePath().toString());
-        asset.setFileUrl("/uploads/" + storedFileName);
+        asset.setFilePath(storedFileName);
+        asset.setFileUrl(buildPublicUrl(storedFileName));
 
         return assetRepository.save(asset);
+    }
+
+    private String buildPublicUrl(String objectKey) {
+        String domain = r2Properties.getPublicDomain();
+        if (domain.endsWith("/")) {
+            domain = domain.substring(0, domain.length() - 1);
+        }
+        return domain + "/" + objectKey;
     }
 }

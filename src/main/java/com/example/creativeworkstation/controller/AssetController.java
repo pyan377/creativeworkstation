@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
+import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -111,7 +112,13 @@ public class AssetController {
                 return ResponseEntity.notFound().build();
             }
 
-            File file = new File(asset.getFilePath());
+            if (assetService.isR2Asset(asset)) {
+                return ResponseEntity.status(302)
+                        .location(URI.create(asset.getFileUrl()))
+                        .build();
+            }
+
+            java.io.File file = new java.io.File(asset.getFilePath());
             if (!file.exists()) {
                 return ResponseEntity.notFound().build();
             }
@@ -159,12 +166,13 @@ public class AssetController {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (ZipOutputStream zos = new ZipOutputStream(baos)) {
                 for (CreativeAsset asset : assets) {
-                    File file = new File(asset.getFilePath());
-                    if (file.exists()) {
+                    try (InputStream inputStream = assetService.openAssetStream(asset)) {
                         ZipEntry zipEntry = new ZipEntry(asset.getFileName());
                         zos.putNextEntry(zipEntry);
-                        Files.copy(file.toPath(), zos);
+                        inputStream.transferTo(zos);
                         zos.closeEntry();
+                    } catch (Exception ignored) {
+                        // 单个文件读取失败时跳过，继续打包其余文件
                     }
                 }
             }
