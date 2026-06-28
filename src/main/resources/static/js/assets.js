@@ -12,6 +12,7 @@ const CATEGORY_LABELS = {
 
 const IMAGE_TYPES = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
 const VIDEO_TYPES = ['mp4', 'avi', 'mov', 'wmv', 'webm', 'mkv'];
+const MAX_UPLOAD_FILES = 9;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await checkAuth();
@@ -89,19 +90,33 @@ function initUploadDropzone() {
 }
 
 function addUploadFiles(files) {
+    let rejected = false;
     Array.from(files).forEach(file => {
+        if (pendingUploadFiles.length >= MAX_UPLOAD_FILES) {
+            if (!rejected) {
+                alert(`单次最多只能选择 ${MAX_UPLOAD_FILES} 个文件，请分批上传。`);
+                rejected = true;
+            }
+            return;
+        }
         const exists = pendingUploadFiles.some(f => f.name === file.name && f.size === file.size);
-        if (!exists) pendingUploadFiles.push(file);
+        if (!exists) {
+            pendingUploadFiles.push(file);
+        }
     });
     renderUploadFileList();
 }
 
 function renderUploadFileList() {
     const container = document.getElementById('uploadFileList');
+    const countEl = document.getElementById('uploadFileCount');
     if (pendingUploadFiles.length === 0) {
         container.innerHTML = '';
+        countEl.classList.add('hidden');
         return;
     }
+    countEl.textContent = `已选择 ${pendingUploadFiles.length} / ${MAX_UPLOAD_FILES} 个文件`;
+    countEl.classList.remove('hidden');
     container.innerHTML = pendingUploadFiles.map((file, index) => `
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div class="flex items-center gap-3 min-w-0">
@@ -280,6 +295,11 @@ async function handleBatchUpload(e) {
 
     if (pendingUploadFiles.length === 0) {
         alert('请先选择要上传的文件');
+        return;
+    }
+
+    if (pendingUploadFiles.length > MAX_UPLOAD_FILES) {
+        alert(`单次最多只能上传 ${MAX_UPLOAD_FILES} 个文件，请减少选择后重试。`);
         return;
     }
 

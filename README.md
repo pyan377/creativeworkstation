@@ -17,6 +17,7 @@
 - **项目详情**：查看项目信息、关联任务、相关素材和提示词
 - **关联任务**：详情弹窗展示该作品下的所有任务，支持「添加关联任务」快速创建
 - **编辑功能**：创建、编辑、删除项目
+- **删除联动**：删除作品时，关联素材的 `projectId` 自动重置为 `null`，素材回到「未分配」状态（不删除文件本身）
 - **素材管理**：
     - **本地上传**：直接上传文件至当前项目。
     - **库内选取**：支持**「从素材库选取」**，直接从未分配的中央资产中勾选并导入当前项目，实现素材复用。
@@ -25,7 +26,8 @@
 ### 💎 创作资产（中央素材库）
 - **独立页面**：`assets.html` 统一管理全部创作素材
 - **分类 Tabs**：全部 / 平面设计（DESIGN）/ 视频（VIDEO）/ 照片（PHOTO）
-- **批量上传**：多选本地文件，指定分类后一次性上传至素材库（`projectId` 为空表示未分配）
+- **批量上传**：多选本地文件，指定分类后一次性上传至素材库（`projectId` 为空表示未分配）；**单次最多 9 个文件**，弹窗内列表可滚动、底部按钮固定
+- **关联状态筛选**：按「全部 / 已关联 / 未分配」过滤素材
 - **批量关联**：勾选多个素材，一键「批量加入作品」，关联到指定 `WorkProject`。
 - **批量删除**：支持批量删除素材，**系统将自动清理数据库记录及本地物理文件**，确保存储空间不被浪费。
 - **卡片交互**：复选框多选、缩略图预览、Hover 动效、已关联/未分配状态标识
@@ -179,12 +181,13 @@ mvn spring-boot:run
 ### 创作素材 `/api/assets`
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/assets` | 获取当前用户素材（支持 `?category=`、`?projectId=`、`?unassigned=true`） |
-| POST | `/api/assets/upload` | 上传素材（单文件 `file` 或批量 `files[]` + `assetCategory`） |
+| GET | `/api/assets` | 获取当前用户素材（支持 `?category=`、`?isAssigned=`、`?projectId=`） |
+| POST | `/api/assets/upload` | 上传素材（单文件 `file` 或批量 `files[]` + `assetCategory`，前端限制单次 ≤9 个） |
 | PUT | `/api/assets/batch-assign` | 批量关联作品（Body: `{ assetIds, projectId }`） |
+| DELETE | `/api/assets/batch` | 批量删除素材（Body: `{ ids }`，同步删除磁盘文件） |
 | GET | `/api/assets/{id}/preview` | 预览/下载单个素材 |
 | GET | `/api/assets/export?ids=` | 批量导出 ZIP |
-| DELETE | `/api/assets/{id}` | 删除素材 |
+| DELETE | `/api/assets/{id}` | 删除单个素材 |
 
 ### 作业任务 `/api/tasks`
 | 方法 | 路径 | 说明 |
@@ -202,6 +205,11 @@ mvn spring-boot:run
 | GET | `/api/dashboard/summary` | 首页概览（含 `upcomingTasks`、`urgentTask`） |
 | GET | `/api/dashboard/random-target` | 随机抽取待完善项目 |
 
+### 作品项目 `/api/projects`
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| DELETE | `/api/projects/{id}` | 删除作品；关联素材 `projectId` 自动置空，回到未分配状态 |
+
 ## 项目结构
 
 ```
@@ -214,7 +222,7 @@ creativeworkstation/
 │   │   │   ├── dto/             # 请求 DTO（如 BatchAssignRequest）
 │   │   │   ├── entity/          # 实体类
 │   │   │   ├── repository/      # 数据仓库
-│   │   │   ├── service/         # 业务逻辑（AssetService、AssignmentTaskService 等）
+│   │   │   ├── service/         # 业务逻辑（AssetService、WorkProjectService 等）
 │   │   │   └── util/            # 工具类
 │   │   └── resources/
 │   │       ├── static/          # 前端资源
@@ -259,12 +267,10 @@ creativeworkstation/
 
 ### 管理创作资产（中央素材库）
 1. 侧边栏进入「创作资产」或访问 `assets.html`
-2. 点击「批量上传素材」，选择分类（平面设计/视频/照片）并多选文件上传
-3. 在网格中勾选素材，点击「批量加入作品」，选择目标作品完成关联
-4. 已关联素材会显示「已关联」标识；未分配素材显示「未分配」
-5. **快速入口**：首页点击「添加素材」图标，将自动跳转至资产页并开启上传弹窗。
-2. **分类与筛选**：通过顶部 Tabs 切换类型，通过状态下拉框筛选「未分配」素材。
-3. **清理资产**：勾选不再需要的素材，点击「批量删除」。注意：这会同步删除磁盘上的原始文件。
+2. 点击「批量上传素材」，选择分类并多选文件（**单次最多 9 个**）；文件列表区域可滚动，底部按钮始终可见
+3. 首页点击「添加素材」图标，将跳转至 `assets.html?action=upload` 并自动打开上传弹窗
+4. 通过顶部 Tabs 切换类型，通过状态下拉框筛选「已关联 / 未分配」
+5. 勾选素材后可「批量加入作品」或「批量删除」（删除会同步清理磁盘文件）
 
 ### 管理项目内素材
 1. 打开作品详情
@@ -308,6 +314,11 @@ creativeworkstation/
 ### 上传失败
 - 检查 `upload.dir` 路径是否存在且有写入权限
 - 检查文件大小是否超过100MB限制
+- 批量上传单次最多 9 个文件，超出请分批上传
+
+### 删除作品后素材仍显示「已关联」
+- 自 vNext 起，删除作品会自动解除素材关联（`projectId` 置空）
+- 若仍看到旧状态，请重启应用并刷新页面；历史脏数据可手动在创作资产页重新筛选查看
 
 ### 数据库连接失败
 - 本地开发确认使用的是 `dev` 配置（H2，无需 PostgreSQL）

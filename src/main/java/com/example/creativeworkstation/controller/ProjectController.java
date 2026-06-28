@@ -4,6 +4,7 @@ import com.example.creativeworkstation.entity.CreativeAsset;
 import com.example.creativeworkstation.entity.WorkProject;
 import com.example.creativeworkstation.repository.CreativeAssetRepository;
 import com.example.creativeworkstation.repository.WorkProjectRepository;
+import com.example.creativeworkstation.service.WorkProjectService;
 import com.example.creativeworkstation.util.SessionUtil;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class ProjectController {
 
     @Autowired
     private CreativeAssetRepository assetRepository;
+
+    @Autowired
+    private WorkProjectService projectService;
 
     @PostMapping
     public ResponseEntity<WorkProject> create(@RequestBody WorkProject project, HttpSession session) {
@@ -118,8 +122,12 @@ public class ProjectController {
         
         Optional<WorkProject> project = projectRepository.findById(id);
         if (project.isPresent() && userId.equals(project.get().getUserId())) {
-            projectRepository.deleteById(id);
-            return ResponseEntity.ok().build();
+            try {
+                projectService.deleteProject(id, userId);
+                return ResponseEntity.ok().build();
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.notFound().build();
+            }
         }
         return ResponseEntity.notFound().build();
     }
